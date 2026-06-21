@@ -12,8 +12,16 @@ spec:
     targetRevision: 78.5.0
 
     helm:
-      valueFiles:
-        - values.yaml
+      values: |
+        grafana:
+          adminPassword: changeme
+
+        prometheus:
+          prometheusSpec:
+            retention: 15d
+
+        alertmanager:
+          enabled: true
 
   destination:
     server: https://kubernetes.default.svc
@@ -23,6 +31,6 @@ spec:
     automated:
       prune: true
       selfHeal: true
-
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
