@@ -16,13 +16,16 @@ single document.
 4. [How Traffic Flows](#how-traffic-flows)
 5. [Shared Media Library](#shared-media-library)
 6. [Cloudflare Tunnel Configuration](#cloudflare-tunnel-configuration)
-7. [Adding a New App (Full Playbook)](#adding-a-new-app-full-playbook)
-8. [Kasm Workspaces Notes](#kasm-workspaces-notes)
-9. [Mobile / Remote Admin via Tailscale](#mobile--remote-admin-via-tailscale)
-10. [Common Commands](#common-commands)
-11. [Troubleshooting](#troubleshooting)
-12. [Security Notes](#security-notes)
-13. [Future Improvements](#future-improvements)
+7. [GitOps with ArgoCD](#gitops-with-argocd)
+8. [Secrets Management (Sealed Secrets)](#secrets-management-sealed-secrets)
+9. [Pushing to GitHub](#pushing-to-github)
+10. [Adding a New App (Full Playbook)](#adding-a-new-app-full-playbook)
+11. [Kasm Workspaces Notes](#kasm-workspaces-notes)
+12. [Mobile / Remote Admin via Tailscale](#mobile--remote-admin-via-tailscale)
+13. [Common Commands](#common-commands)
+14. [Troubleshooting](#troubleshooting)
+15. [Security Notes](#security-notes)
+16. [Future Improvements](#future-improvements)
 
 ---
 
@@ -50,8 +53,9 @@ single document.
 │   │                    K3s Cluster (node: boii)              │ │
 │   │                                                          │ │
 │   │  HomeAssistant  Nextcloud  OpenWebUI  Jellyfin  Kavita   │ │
-│   │  Paperless-ngx  Kasm       Filebrowser                   │ │
+│   │  Paperless-ngx  Kasm       Filebrowser  ArgoCD           │ │
 │   │                                                          │ │
+│   │  GitOps: ArgoCD ← Git repo   Secrets: Sealed Secrets     │ │
 │   │            Shared media: /srv/media (hostPath)           │ │
 │   └──────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────┘
@@ -86,6 +90,20 @@ single document.
   without exposing the control plane to the internet.
 - Node Tailscale IP: `100.111.171.112`
 
+### ArgoCD (GitOps)
+- Deployed via Helm (chart `argo-cd-9.6.0`, app `v3.4.4`) in the `argocd`
+  namespace.
+- Continuously syncs this Git repo's manifests to the cluster.
+- UI: https://argocd.yashbhangale.site
+- Config in `argocd/` (`namespace.yaml`, `values.yaml`).
+
+### Sealed Secrets
+- Bitnami `sealed-secrets-controller` runs in `kube-system`.
+- Encrypts secrets so they can be committed to Git safely. Only the controller
+  in the cluster can decrypt them.
+- Used for the cloudflared tunnel credentials
+  (`cloudflared/sealed-secret.yaml`).
+
 ---
 
 ## Services
@@ -100,6 +118,7 @@ single document.
 | 6 | Paperless-ngx | https://paperless.yashbhangale.site | 8000 | paperless | 5Gi data + 20Gi media + 2Gi consume | Needs Redis; see note below |
 | 7 | Kasm Workspaces | https://kasm.yashbhangale.site | 443 | kasm | 30Gi `/opt` + shared media (RW) | Privileged DinD; 6Gi mem; see notes |
 | 8 | Filebrowser | https://files.yashbhangale.site | 80 | filebrowser | 1Gi config + shared media (RW) | Web file manager for `/srv/media` |
+| 9 | ArgoCD | https://argocd.yashbhangale.site | 80 | argocd | n/a (Helm) | GitOps continuous delivery |
 
 **Paperless note:** K8s auto-injects a `PAPERLESS_PORT=tcp://<ip>:8000` service
 env var that collides with paperless-ngx's own bind-port variable. Fixed by
@@ -217,6 +236,8 @@ ingress:
       noTLSVerify: true
   - hostname: files.yashbhangale.site
     service: http://filebrowser.filebrowser.svc.cluster.local:80
+  - hostname: argocd.yashbhangale.site
+    service: http://argocd-server.argocd.svc.cluster.local:80
   - service: http_status:404   # catch-all
 ```
 
@@ -226,6 +247,157 @@ After editing the configmap:
 ```bash
 kubectl apply -f cloudflared/configmap.yaml
 kubectl rollout restart deployment/cloudflared -n cloudflared
+```
+
+---
+
+## GitOps with ArgoCD
+
+ArgoCD watches this Git repository and keeps the cluster in sync with the
+manifests here. Push a change → ArgoCD applies it. This is the source of truth
+for the cluster.
+
+- **UI**: https://argocd.yashbhangale.site
+- **Namespace**: `argocd`
+- **Install**: Helm chart `argo-cd-9.6.0` (app `v3.4.4`)
+- **Config**: `argocd/values.yaml` runs the server in `insecure` mode
+  (`server.insecure: true`) with a `ClusterIP` service, since TLS is terminated
+  at the Cloudflare edge and the tunnel handles the HTTPS hop.
+
+### Get the initial admin password
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d; echo
+```
+Log in as `admin`. Change the password from the UI after first login, then you
+can delete the initial secret.
+
+### Reinstall / upgrade ArgoCD
+```bash
+helm repo add argo https://argoproj.github.io/argo-helm
+kubectl apply -f argocd/namespace.yaml
+helm upgrade --install argocd argo/argo-cd -n argocd -f argocd/values.yaml
+```
+
+### Point ArgoCD at this repo
+Create an `Application` (via UI or CLI) with:
+- **Repo URL**: your GitHub repo
+- **Path**: the folder to sync (e.g. `jellyfin/`, or a root that contains all
+  app folders)
+- **Destination**: `https://kubernetes.default.svc`, the matching namespace
+- **Sync policy**: automated (with prune + self-heal) once you trust it
+
+Because secrets are sealed (next section), the entire repo — including the
+encrypted credentials — is safe for ArgoCD to apply directly from Git.
+
+---
+
+## Secrets Management (Sealed Secrets)
+
+Plaintext Kubernetes Secrets must **never** be committed to Git. This repo uses
+Bitnami **Sealed Secrets**: a controller in the cluster holds a private key and
+is the only thing that can decrypt a `SealedSecret`. The encrypted file is safe
+to commit publicly.
+
+- **Controller**: `sealed-secrets-controller` in `kube-system`
+- **Example**: `cloudflared/sealed-secret.yaml` (the tunnel credentials)
+- The old plaintext `cloudflared/secret.yaml` has been **removed** from the repo.
+
+### Workflow: seal a new secret
+```bash
+# 1. Create a normal secret locally (do NOT commit this file)
+kubectl create secret generic my-secret \
+  --namespace my-ns \
+  --from-literal=key=value \
+  --dry-run=client -o yaml > /tmp/my-secret.yaml
+
+# 2. Seal it with kubeseal (encrypts using the controller's public key)
+kubeseal --controller-namespace kube-system \
+  --format yaml < /tmp/my-secret.yaml > my-ns/sealed-secret.yaml
+
+# 3. Commit ONLY the sealed file; delete the plaintext
+rm /tmp/my-secret.yaml
+git add my-ns/sealed-secret.yaml
+
+# 4. Apply (or let ArgoCD apply it). The controller decrypts it into a
+#    real Secret in the cluster.
+kubectl apply -f my-ns/sealed-secret.yaml
+```
+
+A `SealedSecret` only contains `encryptedData` (ciphertext) — see
+`cloudflared/sealed-secret.yaml`. Safe to push.
+
+> ⚠️ Back up the controller's private key. If you lose it, you can't decrypt any
+> sealed secret:
+> `kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealed-secrets-key-backup.yaml`
+> (Store this backup somewhere private — NOT in this repo.)
+
+---
+
+## Pushing to GitHub
+
+### Safe to push ✅
+- All `*/namespace.yaml`, `deployment.yaml`, `service.yaml`, `ingress.yaml`,
+  `pvc.yaml`
+- `cloudflared/configmap.yaml` — contains the tunnel ID (not a secret; it's not
+  usable without the credentials)
+- `cloudflared/sealed-secret.yaml` — encrypted, safe
+- `*/values.yaml` (Helm values), `shared-media/*`, `README.md`
+
+### Do NOT push ❌
+- `cloudflared/secret.yaml` (plaintext credentials) — already removed; keep it
+  gone. Use the sealed version instead.
+- The sealed-secrets controller **private key** backup
+- Any `*.deb` / large binaries (e.g. the old `cloudflared-linux-amd64.deb`,
+  already removed) — these don't belong in Git
+- Local kubeconfig, tokens, `cert.pem`, `*.key`, `.env` files
+- Anything under `~/.cloudflared/` or `/etc/cloudflared/`
+
+### Recommended `.gitignore`
+There is currently **no `.gitignore`**. Add one before the first push to prevent
+accidents:
+
+```gitignore
+# Plaintext secrets - never commit
+secret.yaml
+**/secret.yaml
+*.key
+cert.pem
+*.pem
+.env
+
+# Sealed-secrets controller private key backups
+sealed-secrets-key*.yaml
+
+# Binaries / archives
+*.deb
+*.tar
+*.tar.gz
+*.zip
+
+# Local tooling
+kubeconfig
+*.kubeconfig
+```
+
+> Note: `**/secret.yaml` would also ignore a sealed file if you named it
+> `secret.yaml`. The sealed file here is `sealed-secret.yaml`, so it's fine.
+
+### First push
+```bash
+git status                 # review exactly what will be committed
+git add .
+git status                 # confirm no secret.yaml / .deb / keys are staged
+git commit -m "Homelab K3s manifests: apps, tunnel, sealed secrets, ArgoCD"
+git branch -M main
+git remote add origin https://github.com/<you>/<repo>.git
+git push -u origin main
+```
+
+Before committing, double-check nothing sensitive is staged:
+```bash
+git status --porcelain | grep -iE 'secret\.yaml|\.deb|\.key|cert\.pem|\.env' \
+  && echo "STOP: sensitive file staged" || echo "OK: nothing sensitive staged"
 ```
 
 ---
