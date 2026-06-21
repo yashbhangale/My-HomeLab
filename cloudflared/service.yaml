@@ -1,0 +1,14 @@
+---
+# Service for cloudflared (for metrics/debugging)
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudflared
+  namespace: cloudflared
+spec:
+  selector:
+    app: cloudflared
+  ports:
+    - name: metrics
+      port: 9090
+      targetPort: 9090

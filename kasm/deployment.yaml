@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kasm
+  namespace: kasm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: kasm
+  template:
+    metadata:
+      labels:
+        app: kasm
+    spec:
+      # Kasm runs Docker-in-Docker and requires a privileged container.
+      # This grants near-host-level access on the node - acceptable for a
+      # single-node homelab, but isolated in its own namespace.
+      terminationGracePeriodSeconds: 90
+      containers:
+      - name: kasm
+        image: lscr.io/linuxserver/kasm:latest
+        securityContext:
+          privileged: true
+        env:
+        - name: KASM_PORT
+          value: "443"
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: TZ
+          value: "Asia/Kolkata"
+        ports:
+        - name: wizard
+          containerPort: 3000
+        - name: https
+          containerPort: 443
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            # 6Gi memory allocation as requested.
+            memory: "6Gi"
+        volumeMounts:
+        - mountPath: /opt
+          name: opt
+        - mountPath: /srv/media
+          name: shared-media
+      volumes:
+      - name: opt
+        persistentVolumeClaim:
+          claimName: kasm-opt
+      - name: shared-media
+        persistentVolumeClaim:
+          claimName: kasm-shared-media

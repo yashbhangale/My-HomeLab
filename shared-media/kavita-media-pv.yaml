@@ -1,0 +1,36 @@
+# Shared media on the node at /srv/media, mounted read-only into Kavita.
+# Kavita reads /srv/media/books and /srv/media/comics.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kavita-shared-media
+  labels:
+    type: shared-media
+    app: kavita
+spec:
+  capacity:
+    storage: 200Gi
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: shared-media
+  hostPath:
+    path: /srv/media
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kavita-shared-media
+  namespace: kavita
+spec:
+  accessModes:
+    - ReadOnlyMany
+  storageClassName: shared-media
+  resources:
+    requests:
+      storage: 200Gi
+  selector:
+    matchLabels:
+      app: kavita
+      type: shared-media

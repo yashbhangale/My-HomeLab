@@ -1,0 +1,36 @@
+# Shared media on the node at /srv/media, mounted READ-WRITE into Filebrowser
+# so you can organize/move/rename files that all other apps share.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: filebrowser-shared-media
+  labels:
+    type: shared-media
+    app: filebrowser
+spec:
+  capacity:
+    storage: 200Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: shared-media
+  hostPath:
+    path: /srv/media
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: filebrowser-shared-media
+  namespace: filebrowser
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: shared-media
+  resources:
+    requests:
+      storage: 200Gi
+  selector:
+    matchLabels:
+      app: filebrowser
+      type: shared-media

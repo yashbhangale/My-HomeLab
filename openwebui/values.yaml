@@ -1,0 +1,10 @@
+ollama:
+  enabled: false
+
+extraEnvVars:
+  - name: OLLAMA_BASE_URL
+    value: "http://192.168.0.107:11434"
+
+persistence:
+  enabled: true
+  size: 10Gi

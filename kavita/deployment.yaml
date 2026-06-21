@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kavita
+  namespace: kavita
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kavita
+  template:
+    metadata:
+      labels:
+        app: kavita
+    spec:
+      containers:
+      - name: kavita
+        image: jvmilazz0/kavita:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: TZ
+          value: "Asia/Kolkata"
+        volumeMounts:
+        - mountPath: /kavita/config
+          name: config
+        - mountPath: /manga
+          name: library
+        - mountPath: /shared
+          name: shared-media
+          readOnly: true
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: kavita-config
+      - name: library
+        persistentVolumeClaim:
+          claimName: kavita-library
+      - name: shared-media
+        persistentVolumeClaim:
+          claimName: kavita-shared-media

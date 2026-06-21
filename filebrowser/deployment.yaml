@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filebrowser
+  namespace: filebrowser
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: filebrowser
+  template:
+    metadata:
+      labels:
+        app: filebrowser
+    spec:
+      containers:
+      - name: filebrowser
+        image: filebrowser/filebrowser:s6
+        ports:
+        - containerPort: 80
+        env:
+        # Run as uid/gid that can write to /srv/media (which is 2777, so any
+        # user can write, but 33 keeps new files consistent with Nextcloud).
+        - name: PUID
+          value: "33"
+        - name: PGID
+          value: "33"
+        - name: TZ
+          value: "Asia/Kolkata"
+        volumeMounts:
+        - mountPath: /srv
+          name: shared-media
+        - mountPath: /database
+          name: config
+      volumes:
+      - name: shared-media
+        persistentVolumeClaim:
+          claimName: filebrowser-shared-media
+      - name: config
+        persistentVolumeClaim:
+          claimName: filebrowser-config

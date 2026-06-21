@@ -1,0 +1,19 @@
+# nextcloud-values.yaml
+
+persistence:
+  enabled: true
+  size: 20Gi
+
+nextcloud:
+  host: nextcloud.yashbhangale.site
+
+  # Mount the shared media folder (/srv/media on the node) into the Nextcloud
+  # container at /media. Combined with the "External storage" app pointed at
+  # /media, uploads land directly where Jellyfin and Kavita read from.
+  extraVolumes:
+    - name: shared-media
+      persistentVolumeClaim:
+        claimName: nextcloud-shared-media
+  extraVolumeMounts:
+    - name: shared-media
+      mountPath: /media

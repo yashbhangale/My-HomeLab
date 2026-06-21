@@ -1,0 +1,12 @@
+# Small PVC for Filebrowser's own database (users, settings).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: filebrowser-config
+  namespace: filebrowser
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

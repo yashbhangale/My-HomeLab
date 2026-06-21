@@ -1,0 +1,46 @@
+---
+# ConfigMap for cloudflared tunnel configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: cloudflared
+data:
+  config.yaml: |
+    tunnel: f5d445db-9f0b-47f0-90b8-e344cb5f3325
+    credentials-file: /etc/cloudflared/credentials/credentials.json
+    
+    ingress:
+      # Point to Kubernetes services using stable DNS names
+      # Format: <service>.<namespace>.svc.cluster.local:<port>
+      
+      - hostname: nextcloud.yashbhangale.site
+        service: http://nextcloud.nextcloud.svc.cluster.local:8080
+      
+      - hostname: openui.yashbhangale.site
+        service: http://openwebui-open-webui.openwebui.svc.cluster.local:80
+      
+      - hostname: ha.yashbhangale.site
+        service: http://homeassistant.homeassistant.svc.cluster.local:8123
+      
+      - hostname: jellyfin.yashbhangale.site
+        service: http://jellyfin.jellyfin.svc.cluster.local:8096
+      
+      - hostname: kavita.yashbhangale.site
+        service: http://kavita.kavita.svc.cluster.local:5000
+      
+      - hostname: paperless.yashbhangale.site
+        service: http://paperless.paperless.svc.cluster.local:8000
+      
+      # Kasm serves HTTPS with a self-signed cert, so use https origin
+      # and skip TLS verification on the internal hop.
+      - hostname: kasm.yashbhangale.site
+        service: https://kasm.kasm.svc.cluster.local:443
+        originRequest:
+          noTLSVerify: true
+      
+      - hostname: files.yashbhangale.site
+        service: http://filebrowser.filebrowser.svc.cluster.local:80
+      
+      # Catch-all - return 404 for unknown domains
+      - service: http_status:404
