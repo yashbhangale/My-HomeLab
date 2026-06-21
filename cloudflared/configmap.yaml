@@ -31,6 +31,9 @@ data:
       
       - hostname: paperless.yashbhangale.site
         service: http://paperless.paperless.svc.cluster.local:8000
+
+      - hostname: argocd.yashbhangale.site
+        service: http://argocd-server.argocd.svc.cluster.local:80
       
       # Kasm serves HTTPS with a self-signed cert, so use https origin
       # and skip TLS verification on the internal hop.
