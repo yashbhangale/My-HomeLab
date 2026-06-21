@@ -1,0 +1,9 @@
+grafana:
+  adminPassword: changeme
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+
+alertmanager:
+  enabled: true
