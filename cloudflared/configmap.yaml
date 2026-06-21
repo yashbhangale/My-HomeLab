@@ -34,6 +34,10 @@ data:
 
       - hostname: argocd.yashbhangale.site
         service: http://argocd-server.argocd.svc.cluster.local:80
+
+      - hostname: grafana.yashbhangale.site
+        service: http://monitoring-grafana.monitoring.svc.cluster.local:80
+
       
       # Kasm serves HTTPS with a self-signed cert, so use https origin
       # and skip TLS verification on the internal hop.
