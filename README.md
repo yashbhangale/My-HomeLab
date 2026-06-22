@@ -31,35 +31,7 @@ single document.
 
 ## Architecture Overview
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                            Internet                              │
-│                                                                  │
-│   ┌──────────────────┐              ┌──────────────────┐         │
-│   │  Cloudflare DNS  │              │   Tailscale VPN  │         │
-│   │ (*.yashbhangale  │              │  (kubectl / SSH  │         │
-│   │      .site)      │              │   admin access)  │         │
-│   └────────┬─────────┘              └────────┬─────────┘         │
-│            │                                 │                    │
-│            ▼                                 ▼                    │
-│   ┌──────────────────┐              ┌──────────────────┐         │
-│   │ Cloudflare Tunnel│              │  K3s API :6443   │         │
-│   │  (cloudflared    │              │  (Tailscale IP)  │         │
-│   │   K8s pod)       │              └──────────────────┘         │
-│   └────────┬─────────┘                                           │
-│            │ routes by hostname                                  │
-│            ▼                                                     │
-│   ┌──────────────────────────────────────────────────────────┐ │
-│   │                    K3s Cluster (node: boii)              │ │
-│   │                                                          │ │
-│   │  HomeAssistant  Nextcloud  OpenWebUI  Jellyfin  Kavita   │ │
-│   │  Paperless-ngx  Kasm       Filebrowser  ArgoCD           │ │
-│   │                                                          │ │
-│   │  GitOps: ArgoCD ← Git repo   Secrets: Sealed Secrets     │ │
-│   │            Shared media: /srv/media (hostPath)           │ │
-│   └──────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────┘
-```
+![ARCHITECTURAL-DIAGRAM.png](ARCHITECTURAL-DIAGRAM.png)
 
 ---
 
