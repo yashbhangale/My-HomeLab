@@ -38,7 +38,8 @@ data:
       - hostname: grafana.yashbhangale.site
         service: http://monitoring-grafana.monitoring.svc.cluster.local:80
 
-      
+      - hostname: chat.yashbhangale.site
+        service: http://rocketchat.rocketchat.svc.cluster.local:3000
       # Kasm serves HTTPS with a self-signed cert, so use https origin
       # and skip TLS verification on the internal hop.
       - hostname: kasm.yashbhangale.site
@@ -46,6 +47,7 @@ data:
         originRequest:
           noTLSVerify: true
       
+
       - hostname: files.yashbhangale.site
         service: http://filebrowser.filebrowser.svc.cluster.local:80
       
