@@ -186,7 +186,7 @@ After adding/moving files, in Kavita: library → ⋯ → **Scan Library**
 Defined in `cloudflared/configmap.yaml` (namespace `cloudflared`). Current routes:
 
 ```yaml
-tunnel: f5d445db-9f0b-47f0-90b8-e344cb5f3325
+tunnel: tunnelid
 credentials-file: /etc/cloudflared/credentials/credentials.json
 
 ingress:
@@ -304,73 +304,6 @@ A `SealedSecret` only contains `encryptedData` (ciphertext) — see
 > `kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealed-secrets-key-backup.yaml`
 > (Store this backup somewhere private — NOT in this repo.)
 
----
-
-## Pushing to GitHub
-
-### Safe to push ✅
-- All `*/namespace.yaml`, `deployment.yaml`, `service.yaml`, `ingress.yaml`,
-  `pvc.yaml`
-- `cloudflared/configmap.yaml` — contains the tunnel ID (not a secret; it's not
-  usable without the credentials)
-- `cloudflared/sealed-secret.yaml` — encrypted, safe
-- `*/values.yaml` (Helm values), `shared-media/*`, `README.md`
-
-### Do NOT push ❌
-- `cloudflared/secret.yaml` (plaintext credentials) — already removed; keep it
-  gone. Use the sealed version instead.
-- The sealed-secrets controller **private key** backup
-- Any `*.deb` / large binaries (e.g. the old `cloudflared-linux-amd64.deb`,
-  already removed) — these don't belong in Git
-- Local kubeconfig, tokens, `cert.pem`, `*.key`, `.env` files
-- Anything under `~/.cloudflared/` or `/etc/cloudflared/`
-
-### Recommended `.gitignore`
-There is currently **no `.gitignore`**. Add one before the first push to prevent
-accidents:
-
-```gitignore
-# Plaintext secrets - never commit
-secret.yaml
-**/secret.yaml
-*.key
-cert.pem
-*.pem
-.env
-
-# Sealed-secrets controller private key backups
-sealed-secrets-key*.yaml
-
-# Binaries / archives
-*.deb
-*.tar
-*.tar.gz
-*.zip
-
-# Local tooling
-kubeconfig
-*.kubeconfig
-```
-
-> Note: `**/secret.yaml` would also ignore a sealed file if you named it
-> `secret.yaml`. The sealed file here is `sealed-secret.yaml`, so it's fine.
-
-### First push
-```bash
-git status                 # review exactly what will be committed
-git add .
-git status                 # confirm no secret.yaml / .deb / keys are staged
-git commit -m "Homelab K3s manifests: apps, tunnel, sealed secrets, ArgoCD"
-git branch -M main
-git remote add origin https://github.com/<you>/<repo>.git
-git push -u origin main
-```
-
-Before committing, double-check nothing sensitive is staged:
-```bash
-git status --porcelain | grep -iE 'secret\.yaml|\.deb|\.key|cert\.pem|\.env' \
-  && echo "STOP: sensitive file staged" || echo "OK: nothing sensitive staged"
-```
 
 ---
 
@@ -700,4 +633,4 @@ kubectl port-forward -n <namespace> svc/<svc> <local>:<remote>
 - **MagicDNS** hostname for the K3s API instead of the raw Tailscale IP.
 - **GPU acceleration** for Jellyfin/Kasm via AMD `/dev/dri` (VAAPI) — supported
   by this hardware, unlike the NVIDIA path.
-```
+
