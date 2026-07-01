@@ -1,0 +1,31 @@
+# LimitRange: default requests/limits for any pod that doesn't set its own,
+# so ephemeral-storage is always bounded (protects the node disk).
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: defaults
+  namespace: jellyfin
+spec:
+  limits:
+  - type: Container
+    default:
+      cpu: "1"
+      memory: "1Gi"
+      ephemeral-storage: "2Gi"
+    defaultRequest:
+      cpu: "50m"
+      memory: "128Mi"
+      ephemeral-storage: "512Mi"
+---
+# ResourceQuota: caps storage on the local-path class only (the one that
+# consumes real node disk). The hostPath 'shared-media' class is intentionally
+# NOT quota'd here - it's a shared pointer to /srv/media, not per-app disk.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: storage-quota
+  namespace: jellyfin
+spec:
+  hard:
+    local-path.storageclass.storage.k8s.io/requests.storage: "70Gi"
+    local-path.storageclass.storage.k8s.io/persistentvolumeclaims: "5"

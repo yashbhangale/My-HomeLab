@@ -18,6 +18,15 @@ spec:
         image: redis:7
         ports:
         - containerPort: 6379
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "32Mi"
+            ephemeral-storage: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+            ephemeral-storage: "512Mi"
         volumeMounts:
         - mountPath: /data
           name: redis-data

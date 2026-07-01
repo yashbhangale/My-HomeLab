@@ -43,7 +43,7 @@ data:
       # Kasm serves HTTPS with a self-signed cert, so use https origin
       # and skip TLS verification on the internal hop.
       - hostname: kasm.yashbhangale.site
-        service: https://kasm.kasm.svc.cluster.local:443
+        service: https://kasm.kasm.svc.cluster.local:3000
         originRequest:
           noTLSVerify: true
       

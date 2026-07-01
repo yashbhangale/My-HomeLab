@@ -18,6 +18,15 @@ spec:
         image: jellyfin/jellyfin:latest
         ports:
         - containerPort: 8096
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+            ephemeral-storage: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+            ephemeral-storage: "2Gi"
         env:
         - name: TZ
           value: "Asia/Kolkata"

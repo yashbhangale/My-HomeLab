@@ -20,6 +20,15 @@ spec:
         image: ghcr.io/paperless-ngx/paperless-ngx:latest
         ports:
         - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "512Mi"
+            ephemeral-storage: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+            ephemeral-storage: "4Gi"
         env:
         # Must be set explicitly: the K8s-injected PAPERLESS_PORT service var
         # (tcp://<ip>:8000) collides with paperless-ngx's own bind-port var.

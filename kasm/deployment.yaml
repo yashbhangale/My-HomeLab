@@ -42,9 +42,15 @@ spec:
           requests:
             memory: "2Gi"
             cpu: "500m"
+            ephemeral-storage: "2Gi"
           limits:
             # 6Gi memory allocation as requested.
             memory: "6Gi"
+            cpu: "6"
+            # Kasm's DinD image layers live in the /opt PVC, but the container
+            # writable layer + /tmp still count as ephemeral. Cap it so a
+            # runaway session can't fill the node disk.
+            ephemeral-storage: "10Gi"
         volumeMounts:
         - mountPath: /opt
           name: opt
