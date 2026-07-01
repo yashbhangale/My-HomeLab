@@ -1,0 +1,180 @@
+# Supabase self-host values for sb.yashbhangale.site
+#
+# Public entrypoint is the Kong API gateway (fronts Studio, Auth, REST, Realtime,
+# Storage). The chart's own ingress is disabled - cloudflared routes the hostname
+# to the Kong service instead (same pattern as the other apps).
+#
+# Secrets (jwt/db/dashboard/analytics) are supplied by a Kubernetes Secret named
+# "supabase-secrets" created from the sealed secret (see supabase/README notes),
+# referenced via secretRef below.
+
+secret:
+  jwt:
+    secretRef: "supabase-jwt"
+    secretRefKey:
+      anonKey: anonKey
+      serviceKey: serviceKey
+      secret: secret
+  db:
+    secretRef: "supabase-db"
+    secretRefKey:
+      password: password
+      database: database
+  dashboard:
+    secretRef: "supabase-dashboard"
+    secretRefKey:
+      username: username
+      password: password
+      openAiApiKey: openAiApiKey
+  analytics:
+    secretRef: "supabase-analytics"
+    secretRefKey:
+      publicAccessToken: publicAccessToken
+      privateAccessToken: privateAccessToken
+  smtp:
+    secretRef: "supabase-smtp"
+    secretRefKey:
+      username: username
+      password: password
+
+# Chart ingress disabled; cloudflared handles external routing to Kong.
+ingress:
+  enabled: false
+
+kong:
+  ingress:
+    enabled: false
+
+studio:
+  ingress:
+    enabled: false
+
+environment:
+  auth:
+    API_EXTERNAL_URL: https://sb.yashbhangale.site
+    GOTRUE_SITE_URL: https://sb.yashbhangale.site
+    GOTRUE_URI_ALLOW_LIST: "https://sb.yashbhangale.site"
+    # No SMTP configured yet, so auto-confirm signups (email links won't send).
+    GOTRUE_MAILER_AUTOCONFIRM: "true"
+    GOTRUE_DISABLE_SIGNUP: "false"
+  studio:
+    SUPABASE_PUBLIC_URL: https://sb.yashbhangale.site
+
+# Resource requests/limits so this heavy stack behaves as a good node citizen.
+db:
+  persistence:
+    size: 8Gi
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+      ephemeral-storage: "1Gi"
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+      ephemeral-storage: "2Gi"
+
+studio:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "256Mi"
+      ephemeral-storage: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+      ephemeral-storage: "1Gi"
+
+kong:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "256Mi"
+      ephemeral-storage: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+      ephemeral-storage: "1Gi"
+
+auth:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "1"
+      memory: "512Mi"
+
+rest:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "1"
+      memory: "512Mi"
+
+realtime:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "1"
+      memory: "512Mi"
+
+storage:
+  persistence:
+    size: 10Gi
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "1"
+      memory: "512Mi"
+
+meta:
+  resources:
+    requests:
+      cpu: "25m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+analytics:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+
+vector:
+  resources:
+    requests:
+      cpu: "25m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+imgproxy:
+  resources:
+    requests:
+      cpu: "25m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+functions:
+  resources:
+    requests:
+      cpu: "25m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
