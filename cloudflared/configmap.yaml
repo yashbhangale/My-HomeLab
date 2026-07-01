@@ -40,10 +40,10 @@ data:
 
       - hostname: chat.yashbhangale.site
         service: http://rocketchat.rocketchat.svc.cluster.local:3000
-      # Kasm serves HTTPS with a self-signed cert, so use https origin
-      # and skip TLS verification on the internal hop.
+      # TEMPORARY: pointing at the setup wizard (3000) for re-install after
+      # the /opt volume was lost. Switch back to :443 once setup is complete.
       - hostname: kasm.yashbhangale.site
-        service: https://kasm.kasm.svc.cluster.local:443
+        service: https://kasm.kasm.svc.cluster.local:3000
         originRequest:
           noTLSVerify: true
       
