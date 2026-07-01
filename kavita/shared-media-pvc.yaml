@@ -1,19 +1,18 @@
-# Shared media on the node at /srv/media, mounted READ-WRITE into the Kasm pod.
-# This makes /srv/media available inside Kasm's Docker-in-Docker environment so
-# it can be volume-mapped into Chrome workspace sessions (configured in the
-# Kasm admin UI -> Workspaces -> Volume Mappings).
+# Shared media on the node at /srv/media, mounted read-only into Kavita.
+# Kavita reads /srv/media/books and /srv/media/comics.
+# Managed by ArgoCD alongside the deployment so it can't be orphaned.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: kasm-shared-media
+  name: kavita-shared-media
   labels:
     type: shared-media
-    app: kasm
+    app: kavita
 spec:
   capacity:
     storage: 200Gi
   accessModes:
-    - ReadWriteOnce
+    - ReadOnlyMany
   persistentVolumeReclaimPolicy: Retain
   storageClassName: shared-media
   hostPath:
@@ -23,16 +22,16 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: kasm-shared-media
-  namespace: kasm
+  name: kavita-shared-media
+  namespace: kavita
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadOnlyMany
   storageClassName: shared-media
   resources:
     requests:
       storage: 200Gi
   selector:
     matchLabels:
-      app: kasm
+      app: kavita
       type: shared-media

@@ -1,17 +1,18 @@
-# Shared media on the node at /srv/media, mounted read-only into Kavita.
-# Kavita reads /srv/media/books and /srv/media/comics.
+# Shared media on the node at /srv/media, mounted READ-WRITE into Filebrowser
+# so you can organize/move/rename files that all other apps share.
+# Managed by ArgoCD alongside the deployment so it can't be orphaned.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: kavita-shared-media
+  name: filebrowser-shared-media
   labels:
     type: shared-media
-    app: kavita
+    app: filebrowser
 spec:
   capacity:
     storage: 200Gi
   accessModes:
-    - ReadOnlyMany
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: shared-media
   hostPath:
@@ -21,16 +22,16 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: kavita-shared-media
-  namespace: kavita
+  name: filebrowser-shared-media
+  namespace: filebrowser
 spec:
   accessModes:
-    - ReadOnlyMany
+    - ReadWriteOnce
   storageClassName: shared-media
   resources:
     requests:
       storage: 200Gi
   selector:
     matchLabels:
-      app: kavita
+      app: filebrowser
       type: shared-media
