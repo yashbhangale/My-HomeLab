@@ -1,0 +1,38 @@
+# Shared media on the node at /srv/media, mounted READ-WRITE into qBittorrent so
+# downloaded files land directly in the shared library (available to Jellyfin,
+# Kavita, Nextcloud, Filebrowser, etc.).
+# Managed by ArgoCD alongside the deployment so it can't be orphaned.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qbittorrent-shared-media
+  labels:
+    type: shared-media
+    app: qbittorrent
+spec:
+  capacity:
+    storage: 200Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: shared-media
+  hostPath:
+    path: /srv/media
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-shared-media
+  namespace: qbittorrent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: shared-media
+  resources:
+    requests:
+      storage: 200Gi
+  selector:
+    matchLabels:
+      app: qbittorrent
+      type: shared-media

@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: qbittorrent
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: qbittorrent
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      containers:
+      - name: qbittorrent
+        image: lscr.io/linuxserver/qbittorrent:latest
+        ports:
+        - containerPort: 8080           # web UI
+        - containerPort: 6881
+          protocol: TCP                 # torrent traffic
+        - containerPort: 6881
+          protocol: UDP                 # torrent traffic (DHT)
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "128Mi"
+            ephemeral-storage: "512Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+            ephemeral-storage: "2Gi"
+        env:
+        # Run as uid/gid 33 so downloaded files stay consistent with the rest
+        # of the shared media writers (Nextcloud/Filebrowser).
+        - name: PUID
+          value: "33"
+        - name: PGID
+          value: "33"
+        - name: TZ
+          value: "Asia/Kolkata"
+        # Fixed web UI port so the Service/Ingress/tunnel stay stable.
+        - name: WEBUI_PORT
+          value: "8080"
+        - name: TORRENTING_PORT
+          value: "6881"
+        volumeMounts:
+        - mountPath: /config
+          name: config
+        # Downloads land directly in the shared media library at /srv/media.
+        - mountPath: /downloads
+          name: shared-media
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: qbittorrent-config
+      - name: shared-media
+        persistentVolumeClaim:
+          claimName: qbittorrent-shared-media
