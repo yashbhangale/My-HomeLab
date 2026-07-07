@@ -54,5 +54,8 @@ data:
       - hostname: sb.yashbhangale.site
         service: http://supabase-supabase-kong.supabase.svc.cluster.local:8000
       
+      - hostname: downloader.yashbhangale.site
+        service: http://pyload.pyload.svc.cluster.local:8000
+      
       # Catch-all - return 404 for unknown domains
       - service: http_status:404

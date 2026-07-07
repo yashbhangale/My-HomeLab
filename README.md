@@ -91,6 +91,7 @@ single document.
 | 7 | Kasm Workspaces | https://kasm.yashbhangale.site | 443 | kasm | 30Gi `/opt` + shared media (RW) | Privileged DinD; 6Gi mem; see notes |
 | 8 | Filebrowser | https://files.yashbhangale.site | 80 | filebrowser | 1Gi config + shared media (RW) | Web file manager for `/srv/media` |
 | 9 | ArgoCD | https://argocd.yashbhangale.site | 80 | argocd | n/a (Helm) | GitOps continuous delivery |
+| 10 | pyLoad | https://downloader.yashbhangale.site | 8000 | pyload | 2Gi config + shared media (RW) | Download manager; downloads land in `/srv/media` |
 
 **Paperless note:** K8s auto-injects a `PAPERLESS_PORT=tcp://<ip>:8000` service
 env var that collides with paperless-ngx's own bind-port variable. Fixed by
