@@ -1,8 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ttyd
-  namespace: ttyd
+  name: wetty
+  namespace: wetty
 spec:
   ingressClassName: traefik
   rules:
@@ -13,6 +13,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ttyd
+                name: wetty
                 port:
-                  number: 7681
+                  number: 3000

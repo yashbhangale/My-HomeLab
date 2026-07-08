@@ -1,29 +1,29 @@
 # Very low default requests/limits for any pod that doesn't set its own.
-# ttyd is a lightweight web terminal, so it needs almost nothing.
+# Wetty is a lightweight web SSH gateway, so it needs very little.
 apiVersion: v1
 kind: LimitRange
 metadata:
   name: defaults
-  namespace: ttyd
+  namespace: wetty
 spec:
   limits:
     - type: Container
       default:
-        cpu: "100m"
-        memory: "128Mi"
+        cpu: "150m"
+        memory: "192Mi"
         ephemeral-storage: "256Mi"
       defaultRequest:
         cpu: "10m"
-        memory: "32Mi"
+        memory: "48Mi"
         ephemeral-storage: "64Mi"
 ---
 # No persistent storage is used in this namespace. This quota hard-blocks any
-# PVC from being created here, keeping ttyd stateless.
+# PVC from being created here, keeping Wetty stateless.
 apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: storage-quota
-  namespace: ttyd
+  namespace: wetty
 spec:
   hard:
     persistentvolumeclaims: "0"

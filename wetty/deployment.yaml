@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wetty
+  namespace: wetty
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: wetty
+  template:
+    metadata:
+      labels:
+        app: wetty
+    spec:
+      containers:
+        - name: wetty
+          image: wettyoss/wetty:latest
+          args:
+            # SSH into the K3s host itself (node internal IP) so you land in a
+            # real shell (yash@boii) with kubectl/docker/systemctl/etc.
+            - "--ssh-host=192.168.0.152"
+            - "--ssh-port=22"
+            # Serve at the root path so ssh.yashbhangale.site/ works (Wetty
+            # otherwise defaults to /wetty).
+            - "--base=/"
+            - "--port=3000"
+            - "--title=homelab"
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "48Mi"
+              ephemeral-storage: "64Mi"
+            limits:
+              cpu: "150m"
+              memory: "192Mi"
+              ephemeral-storage: "256Mi"
+          env:
+            - name: TZ
+              value: "Asia/Kolkata"

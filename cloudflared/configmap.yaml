@@ -58,7 +58,7 @@ data:
         service: http://qbittorrent.qbittorrent.svc.cluster.local:8080
       
       - hostname: ssh.yashbhangale.site
-        service: http://ttyd.ttyd.svc.cluster.local:7681
+        service: http://wetty.wetty.svc.cluster.local:3000
       
       # Catch-all - return 404 for unknown domains
       
