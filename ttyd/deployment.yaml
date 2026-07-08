@@ -24,6 +24,7 @@ spec:
             - ttyd
 
           args:
+            - "-W"
             - "-p"
             - "7681"
             - "sh"
