@@ -21,7 +21,7 @@ spec:
           args:
             - "-p"
             - "7681"
-            - "bash"
+            - "/bin/sh"
           ports:
             - containerPort: 7681
               protocol: TCP
