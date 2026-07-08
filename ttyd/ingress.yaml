@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ttyd
+  namespace: ttyd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ssh.yashbhangale.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ttyd
+                port:
+                  number: 7681

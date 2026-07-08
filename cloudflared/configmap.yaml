@@ -57,5 +57,10 @@ data:
       - hostname: torrent.yashbhangale.site
         service: http://qbittorrent.qbittorrent.svc.cluster.local:8080
       
+      - hostname: ssh.yashbhangale.site
+        service: http://ttyd.ttyd.svc.cluster.local:7681
+      
+      # Catch-all - return 404 for unknown domains
+      
       # Catch-all - return 404 for unknown domains
       - service: http_status:404

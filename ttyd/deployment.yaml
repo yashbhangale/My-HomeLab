@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ttyd
+  namespace: ttyd
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ttyd
+  template:
+    metadata:
+      labels:
+        app: ttyd
+    spec:
+      containers:
+        - name: ttyd
+          image: tsl0922/ttyd:latest
+          args:
+            - "-p"
+            - "7681"
+            - "bash"
+          ports:
+            - containerPort: 7681
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+              ephemeral-storage: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+              ephemeral-storage: "256Mi"
+          env:
+            - name: TZ
+              value: "Asia/Kolkata"
