@@ -18,13 +18,25 @@ spec:
       containers:
         - name: ttyd
           image: tsl0922/ttyd:latest
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - ttyd
+
           args:
             - "-p"
             - "7681"
             - "sh"
+
           ports:
-            - containerPort: 7681
+            - name: http
+              containerPort: 7681
               protocol: TCP
+
+          env:
+            - name: TZ
+              value: "Asia/Kolkata"
+
           resources:
             requests:
               cpu: "10m"
@@ -34,6 +46,3 @@ spec:
               cpu: "100m"
               memory: "128Mi"
               ephemeral-storage: "256Mi"
-          env:
-            - name: TZ
-              value: "Asia/Kolkata"
