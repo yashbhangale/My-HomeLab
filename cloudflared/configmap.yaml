@@ -46,7 +46,6 @@ data:
         service: https://kasm.kasm.svc.cluster.local:443
         originRequest:
           noTLSVerify: true
-      
 
       - hostname: files.yashbhangale.site
         service: http://filebrowser.filebrowser.svc.cluster.local:80
