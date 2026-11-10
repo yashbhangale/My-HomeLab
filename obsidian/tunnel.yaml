@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: obsidian-tunnel
+  namespace: obsidian
+data:
+  config.yaml: |
+    tunnel: 0b6647a4-765a-420b-a9dd-d840b55fe513
+    credentials-file: /etc/cloudflared/credentials/credentials.json
+    ingress:
+      - hostname: obsidian.yashbhangale.site
+        service: http://obsidian.obsidian.svc.cluster.local:80
+      - service: http_status:404
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obsidian-tunnel
+  namespace: obsidian
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: obsidian-tunnel}
+  template:
+    metadata:
+      labels: {app: obsidian-tunnel}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:2026.10.7
+          args: [tunnel, --no-autoupdate, --config, /etc/cloudflared/config/config.yaml, --metrics, "0.0.0.0:9090", run]
+          resources:
+            requests: {cpu: 25m, memory: 64Mi}
+            limits: {cpu: 200m, memory: 128Mi, ephemeral-storage: 128Mi}
+          readinessProbe:
+            httpGet: {path: /ready, port: 9090}
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/cloudflared/config, readOnly: true}
+            - {name: credentials, mountPath: /etc/cloudflared/credentials, readOnly: true}
+      volumes:
+        - name: config
+          configMap: {name: obsidian-tunnel}
+        - name: credentials
+          secret: {secretName: obsidian-tunnel-credentials}

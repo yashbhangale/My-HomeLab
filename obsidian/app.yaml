@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: obsidian-gateway
+  namespace: obsidian
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      server_name obsidian.yashbhangale.site;
+      server_tokens off;
+      client_max_body_size 100m;
+      auth_basic "Private Obsidian vault";
+      auth_basic_user_file /etc/nginx/auth/htpasswd;
+      location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obsidian
+  namespace: obsidian
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: obsidian
+  template:
+    metadata:
+      labels:
+        app: obsidian
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: boii
+      containers:
+        - name: obsidian
+          image: lscr.io/linuxserver/obsidian@sha256:8211daea90b75fd172469e2a19a14f80eec4473fb86c669382cd6d70628926cd
+          env:
+            - {name: PUID, value: "1000"}
+            - {name: PGID, value: "1000"}
+            - {name: TZ, value: Asia/Kolkata}
+          envFrom:
+            - secretRef:
+                name: obsidian-auth
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+              ephemeral-storage: 256Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+              ephemeral-storage: 2Gi
+          startupProbe:
+            tcpSocket: {port: 3000}
+            periodSeconds: 5
+            failureThreshold: 120
+          readinessProbe:
+            tcpSocket: {port: 3000}
+            periodSeconds: 10
+          volumeMounts:
+            - {name: config, mountPath: /config}
+            - {name: vault, mountPath: /vault}
+            - {name: shm, mountPath: /dev/shm}
+        - name: gateway
+          image: nginx:1.28-alpine
+          ports:
+            - {name: http, containerPort: 8080}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 200m, memory: 64Mi, ephemeral-storage: 128Mi}
+          readinessProbe:
+            tcpSocket: {port: http}
+          volumeMounts:
+            - {name: gateway, mountPath: /etc/nginx/conf.d, readOnly: true}
+            - {name: auth, mountPath: /etc/nginx/auth, readOnly: true}
+      volumes:
+        - name: config
+          hostPath:
+            path: /home/yash/.local/share/obsidian-web/config
+            type: Directory
+        - name: vault
+          hostPath:
+            path: /home/yash/vault/content
+            type: Directory
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+        - name: gateway
+          configMap: {name: obsidian-gateway}
+        - name: auth
+          secret:
+            secretName: obsidian-auth
+            items:
+              - {key: htpasswd, path: htpasswd}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: obsidian
+  namespace: obsidian
+spec:
+  selector: {app: obsidian}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: obsidian
+  namespace: obsidian
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: obsidian.yashbhangale.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: obsidian
+                port: {number: 80}
