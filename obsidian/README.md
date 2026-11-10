@@ -25,8 +25,8 @@ The app image is pinned to the amd64 digest inspected on 2026-11-10.
 Cloudflare DNS -> dedicated named tunnel `obsidian-homelab` -> authenticated
 Nginx gateway on `obsidian.obsidian.svc.cluster.local:80` -> Obsidian on localhost:3000.
 Cloudflare terminates public TLS; the internal HTTP hop is within the cluster.
-The gateway checks a bcrypt password hash; Obsidian also receives the matching
-CUSTOM_USER/PASSWORD from the Secret. The ingress routes through that gateway too.
+The gateway checks a bcrypt password hash; Obsidian also receives matching
+CUSTOM_USER/PASSWORD for its native HTTPS endpoint from the Secret. The ingress routes through that gateway too.
 The NetworkPolicy permits only the Obsidian connector and Traefik to reach port
 8080 and blocks direct incoming access to the streaming backend.
 
@@ -51,3 +51,13 @@ For recovery on a new cluster, restore host directories, recreate/reseal credent
 and update the node selector. SealedSecrets are tied to this cluster's sealing key.
 DNS points to tunnel `0b6647a4-765a-420b-a9dd-d840b55fe513`.
 Do not restart the host or shared infrastructure to validate this application.
+
+## Verified on 2026-11-10
+
+- Obsidian: 2/2 containers ready, zero restarts; connector: 1/1 ready.
+- Argo CD application: Synced / Healthy.
+- Public requests without credentials or with a wrong password: HTTP 401.
+- Valid login: HTTP 200; streaming WebSocket: HTTP 101.
+- Container sees all 928 Markdown files; private Home hash matches the host.
+- Shared vault is writable. No GitHub auto-sync configured by this deployment.
+- Existing homelab tunnel was not restarted or edited.
