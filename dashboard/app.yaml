@@ -1,0 +1,260 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dashboard
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: homepage
+  namespace: dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: homepage-dashboard-readonly
+rules:
+  - apiGroups: [""]
+    resources: [namespaces, pods, nodes]
+    verbs: [get, list]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses]
+    verbs: [get, list]
+  - apiGroups: [metrics.k8s.io]
+    resources: [nodes, pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: homepage-dashboard-readonly
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: homepage-dashboard-readonly
+subjects:
+  - kind: ServiceAccount
+    name: homepage
+    namespace: dashboard
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-gateway
+  namespace: dashboard
+data:
+  default.conf: |
+    server {
+      listen 8080 default_server;
+      server_name _;
+      return 444;
+    }
+    server {
+      listen 8080;
+      server_name dashboard.yashbhangale.site;
+      server_tokens off;
+      auth_basic "Yash's private homelab";
+      auth_basic_user_file /etc/nginx/auth/htpasswd;
+      add_header X-Content-Type-Options nosniff always;
+      add_header Referrer-Policy same-origin always;
+      add_header Cache-Control "private, no-store" always;
+      location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Authorization "";
+      }
+    }
+    server {
+      listen 8080;
+      server_name status.yashbhangale.site;
+      server_tokens off;
+      auth_basic "Yash's private homelab";
+      auth_basic_user_file /etc/nginx/auth/htpasswd;
+      add_header X-Content-Type-Options nosniff always;
+      add_header Referrer-Policy same-origin always;
+      add_header Cache-Control "private, no-store" always;
+      location / {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Authorization "";
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+  namespace: dashboard
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: homepage}
+  template:
+    metadata:
+      annotations:
+        dashboard.homelab/config-revision: "3bf1071892f14aba"
+      labels: {app: homepage}
+    spec:
+      nodeSelector: {kubernetes.io/hostname: boii}
+      serviceAccountName: homepage
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        - name: configure
+          image: busybox:1.37
+          command: [sh, -c, "cp /seed/* /config/"]
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 10m, memory: 8Mi}
+            limits: {cpu: 100m, memory: 32Mi}
+          volumeMounts:
+            - {name: seed, mountPath: /seed, readOnly: true}
+            - {name: config, mountPath: /config}
+      containers:
+        - name: homepage
+          image: ghcr.io/gethomepage/homepage:v2.7.0
+          env:
+            - {name: HOMEPAGE_ALLOWED_HOSTS, value: "dashboard.yashbhangale.site,127.0.0.1:4181,localhost:4181"}
+            - {name: TZ, value: Asia/Kolkata}
+            - {name: LOG_TARGETS, value: stdout}
+          ports: [{name: homepage, containerPort: 3000}]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi, ephemeral-storage: 128Mi}
+            limits: {cpu: "1", memory: 512Mi, ephemeral-storage: 512Mi}
+          startupProbe:
+            tcpSocket: {port: homepage}
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket: {port: homepage}
+          volumeMounts:
+            - {name: config, mountPath: /app/config}
+            - {name: api-access, mountPath: /var/run/secrets/kubernetes.io/serviceaccount, readOnly: true}
+        - name: gatus
+          image: twinproduction/gatus:v5.38.0
+          env:
+            - {name: GATUS_CONFIG_PATH, value: /config/gatus.yaml}
+            - {name: TZ, value: Asia/Kolkata}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 250m, memory: 128Mi, ephemeral-storage: 128Mi}
+          ports: [{name: gatus, containerPort: 8081}]
+          readinessProbe:
+            tcpSocket: {port: gatus}
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: gatus-data, mountPath: /data}
+        - name: gateway
+          image: nginx:1.28-alpine
+          ports: [{name: http, containerPort: 8080}]
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 200m, memory: 64Mi, ephemeral-storage: 128Mi}
+          readinessProbe:
+            tcpSocket: {port: http}
+          volumeMounts:
+            - {name: gateway, mountPath: /etc/nginx/conf.d, readOnly: true}
+            - {name: auth, mountPath: /etc/nginx/auth, readOnly: true}
+      volumes:
+        - name: seed
+          configMap: {name: homepage-config}
+        - name: config
+          emptyDir: {}
+        - name: gateway
+          configMap: {name: dashboard-gateway}
+        - name: auth
+          secret: {secretName: dashboard-auth}
+        - name: gatus-data
+          hostPath:
+            path: /home/yash/.local/share/homelab-dashboard/gatus
+            type: Directory
+        - name: api-access
+          projected:
+            sources:
+              - serviceAccountToken: {path: token, expirationSeconds: 3600}
+              - configMap:
+                  name: kube-root-ca.crt
+                  items: [{key: ca.crt, path: ca.crt}]
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef: {fieldPath: metadata.namespace}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homepage
+  namespace: dashboard
+spec:
+  selector: {app: homepage}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homepage
+  namespace: dashboard
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: dashboard.yashbhangale.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homepage
+                port: {number: 80}
+    - host: status.yashbhangale.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homepage
+                port: {number: 80}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: homepage-ingress
+  namespace: dashboard
+spec:
+  podSelector:
+    matchLabels: {app: homepage}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app: dashboard-tunnel}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: traefik}
+      ports: [{protocol: TCP, port: 8080}]

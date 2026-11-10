@@ -1,0 +1,225 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+  namespace: dashboard
+data:
+  settings.yaml: "title: Yash's Homelab\ndescription: One place for your applications,\
+    \ resources and uptime.\ntheme: dark\ncolor: slate\nheaderStyle: clean\nstatusStyle:\
+    \ dot\nshowStats: true\nhideVersion: false\ndisableUpdateCheck: true\nuseEqualHeights:\
+    \ true\ntarget: _blank\nquicklaunch:\n  searchDescriptions: true\n  hideInternetSearch:\
+    \ true\n  hideVisitURL: true\nlayout:\n  Live telemetry:\n    style: row\n   \
+    \ columns: 4\n  Media & downloads:\n    style: column\n  Knowledge & files:\n\
+    \    style: column\n  Apps & workspaces:\n    style: column\n  Operations:\n \
+    \   style: row\n    columns: 3\n"
+  services.yaml: "- Live telemetry:\n  - Compute:\n      icon: mdi-chip\n      href:\
+    \ https://grafana.yashbhangale.site\n      description: Live from Prometheus ·\
+    \ refreshes every 15 seconds\n      widget:\n        type: prometheusmetric\n\
+    \        url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090\n\
+    \        refreshInterval: 15000\n        metrics:\n        - label: CPU\n    \
+    \      query: 100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))\n\
+    \          format:\n            type: number\n            options:\n         \
+    \     maximumFractionDigits: 1\n            suffix: '%'\n        - label: Memory\n\
+    \          query: 100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))\n\
+    \          format:\n            type: number\n            options:\n         \
+    \     maximumFractionDigits: 1\n            suffix: '%'\n        - label: CPU\
+    \ temp\n          query: max(node_hwmon_temp_celsius{chip=\"pci0000:00_0000:00:18_3\"\
+    })\n          format:\n            type: number\n            options:\n      \
+    \        maximumFractionDigits: 1\n            suffix: °C\n        - label: Uptime\n\
+    \          query: time() - max(node_boot_time_seconds)\n          format:\n  \
+    \          type: duration\n  - Storage:\n      icon: mdi-harddisk\n      href:\
+    \ https://grafana.yashbhangale.site\n      description: Live from Prometheus ·\
+    \ refreshes every 15 seconds\n      widget:\n        type: prometheusmetric\n\
+    \        url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090\n\
+    \        refreshInterval: 15000\n        metrics:\n        - label: Root used\n\
+    \          query: 100 * (1 - sum(node_filesystem_avail_bytes{mountpoint=\"/\"\
+    ,fstype=\"ext4\"})\n            / sum(node_filesystem_size_bytes{mountpoint=\"\
+    /\",fstype=\"ext4\"}))\n          format:\n            type: number\n        \
+    \    options:\n              maximumFractionDigits: 1\n            suffix: '%'\n\
+    \        - label: Root free\n          query: sum(node_filesystem_avail_bytes{mountpoint=\"\
+    /\",fstype=\"ext4\"})\n          format:\n            type: bytes\n        - label:\
+    \ Home used\n          query: 100 * (1 - sum(node_filesystem_avail_bytes{mountpoint=\"\
+    /home\",fstype=\"ext4\"})\n            / sum(node_filesystem_size_bytes{mountpoint=\"\
+    /home\",fstype=\"ext4\"}))\n          format:\n            type: number\n    \
+    \        options:\n              maximumFractionDigits: 1\n            suffix:\
+    \ '%'\n        - label: Home free\n          query: sum(node_filesystem_avail_bytes{mountpoint=\"\
+    /home\",fstype=\"ext4\"})\n          format:\n            type: bytes\n  - Network\
+    \ & power:\n      icon: mdi-access-point-network\n      href: https://grafana.yashbhangale.site\n\
+    \      description: Live from Prometheus · refreshes every 15 seconds\n      widget:\n\
+    \        type: prometheusmetric\n        url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090\n\
+    \        refreshInterval: 15000\n        metrics:\n        - label: Download\n\
+    \          query: sum(rate(node_network_receive_bytes_total{device=\"wlp4s0\"\
+    }[5m]))\n          format:\n            type: byterate\n        - label: Upload\n\
+    \          query: sum(rate(node_network_transmit_bytes_total{device=\"wlp4s0\"\
+    }[5m]))\n          format:\n            type: byterate\n        - label: Battery\n\
+    \          query: max(node_power_supply_capacity{power_supply=\"BAT0\"})\n   \
+    \       format:\n            type: number\n            options:\n            \
+    \  maximumFractionDigits: 1\n            suffix: '%'\n        - label: AC online\n\
+    \          query: max(node_power_supply_online{power_supply=\"ADP0\"})\n     \
+    \     format:\n            type: number\n            options:\n              maximumFractionDigits:\
+    \ 1\n  - Cluster health:\n      icon: kubernetes.svg\n      href: https://grafana.yashbhangale.site/alerting/list\n\
+    \      description: Live from Prometheus · refreshes every 15 seconds\n      widget:\n\
+    \        type: prometheusmetric\n        url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090\n\
+    \        refreshInterval: 15000\n        metrics:\n        - label: Pods ready\n\
+    \          query: sum(kube_pod_status_ready{condition=\"true\"})\n          format:\n\
+    \            type: number\n            options:\n              maximumFractionDigits:\
+    \ 1\n        - label: Not ready\n          query: sum(kube_pod_status_ready{condition=\"\
+    false\"})\n          format:\n            type: number\n            options:\n\
+    \              maximumFractionDigits: 1\n        - label: Restarts / 1h\n    \
+    \      query: sum(increase(kube_pod_container_status_restarts_total[1h])) or vector(0)\n\
+    \          format:\n            type: number\n            options:\n         \
+    \     maximumFractionDigits: 1\n        - label: Firing alerts\n          query:\
+    \ count(ALERTS{alertstate=\"firing\",alertname!=\"Watchdog\"}) or vector(0)\n\
+    \          format:\n            type: number\n            options:\n         \
+    \     maximumFractionDigits: 1\n- Media & downloads:\n  - Jellyfin:\n      icon:\
+    \ jellyfin.svg\n      href: https://jellyfin.yashbhangale.site\n      description:\
+    \ Movies, music & your media library\n      namespace: jellyfin\n      app: jellyfin\n\
+    \      podSelector: app=jellyfin\n      showStats: true\n      siteMonitor: http://jellyfin.jellyfin:8096\n\
+    \  - Kavita:\n      icon: kavita.svg\n      href: https://kavita.yashbhangale.site\n\
+    \      description: Books, comics & reading\n      namespace: kavita\n      app:\
+    \ kavita\n      podSelector: app=kavita\n      showStats: true\n      siteMonitor:\
+    \ http://kavita.kavita:5000\n  - qBittorrent:\n      icon: qbittorrent.svg\n \
+    \     href: https://torrent.yashbhangale.site\n      description: Downloads &\
+    \ transfer queue\n      namespace: qbittorrent\n      app: qbittorrent\n     \
+    \ podSelector: app=qbittorrent\n      showStats: true\n      siteMonitor: http://qbittorrent.qbittorrent:8080\n\
+    - Knowledge & files:\n  - Obsidian:\n      icon: obsidian.svg\n      href: https://obsidian.yashbhangale.site\n\
+    \      description: Your connected notes & knowledge\n      namespace: obsidian\n\
+    \      app: obsidian\n      podSelector: app=obsidian\n      showStats: true\n\
+    \  - Nextcloud:\n      icon: nextcloud.svg\n      href: https://nextcloud.yashbhangale.site\n\
+    \      description: Personal files & collaboration\n      namespace: nextcloud\n\
+    \      app: nextcloud\n      podSelector: ''\n      showStats: true\n      siteMonitor:\
+    \ https://nextcloud.yashbhangale.site/status.php\n  - Filebrowser:\n      icon:\
+    \ filebrowser.svg\n      href: https://files.yashbhangale.site\n      description:\
+    \ Browse & organize shared storage\n      namespace: filebrowser\n      app: filebrowser\n\
+    \      podSelector: app=filebrowser\n      showStats: true\n      siteMonitor:\
+    \ http://filebrowser.filebrowser:80\n  - Paperless:\n      icon: paperless-ngx.svg\n\
+    \      href: https://paperless.yashbhangale.site\n      description: Document\
+    \ archive & OCR\n      namespace: paperless\n      app: paperless\n      podSelector:\
+    \ app=paperless\n      showStats: true\n      siteMonitor: http://paperless.paperless:8000\n\
+    - Apps & workspaces:\n  - Open WebUI:\n      icon: open-webui.svg\n      href:\
+    \ https://openui.yashbhangale.site\n      description: Local models & AI conversations\n\
+    \      namespace: openwebui\n      app: openwebui\n      podSelector: ''\n   \
+    \   showStats: true\n      siteMonitor: http://openwebui-open-webui.openwebui:80\n\
+    \  - Home Assistant:\n      icon: home-assistant.svg\n      href: https://ha.yashbhangale.site\n\
+    \      description: Home automation & devices\n      namespace: homeassistant\n\
+    \      app: homeassistant\n      podSelector: app=homeassistant\n      showStats:\
+    \ true\n      siteMonitor: http://homeassistant.homeassistant:8123\n  - Kasm:\n\
+    \      icon: kasm.svg\n      href: https://kasm.yashbhangale.site\n      description:\
+    \ Your browser-based desktop\n      namespace: kasm\n      app: kasm\n      podSelector:\
+    \ app=kasm\n      showStats: true\n  - Browser terminal:\n      icon: terminal.svg\n\
+    \      href: https://ssh.yashbhangale.site\n      description: SSH terminal in\
+    \ your browser\n      namespace: wetty\n      app: wetty\n      podSelector: app=wetty\n\
+    \      showStats: true\n      siteMonitor: http://wetty.wetty:3000\n  - Supabase:\n\
+    \      icon: supabase.svg\n      href: https://sb.yashbhangale.site\n      description:\
+    \ Database, auth, storage & APIs\n      namespace: supabase\n      app: supabase\n\
+    \      podSelector: ''\n      showStats: true\n- Operations:\n  - Uptime history:\n\
+    \      icon: gatus.svg\n      href: https://status.yashbhangale.site\n      description:\
+    \ Availability, latency & persistent check history\n      widget:\n        type:\
+    \ gatus\n        url: http://127.0.0.1:8081\n  - Argo CD:\n      icon: argo-cd.svg\n\
+    \      href: https://argocd.yashbhangale.site\n      description: GitOps deployments\
+    \ & application health\n      namespace: argocd\n      app: argocd\n      podSelector:\
+    \ ''\n      showStats: true\n      siteMonitor: http://argocd-server.argocd:80\n\
+    \  - Grafana:\n      icon: grafana.svg\n      href: https://grafana.yashbhangale.site\n\
+    \      description: Resource trends, logs & detailed dashboards\n      namespace:\
+    \ monitoring\n      app: monitoring\n      podSelector: app.kubernetes.io/name=grafana\n\
+    \      showStats: true\n      siteMonitor: http://monitoring-grafana.monitoring:80\n\
+    \  - Prometheus:\n      icon: prometheus.svg\n      href: https://grafana.yashbhangale.site/explore\n\
+    \      description: Scrape health & time-series metrics\n      namespace: monitoring\n\
+    \      app: prometheus\n      podSelector: app.kubernetes.io/name=prometheus\n\
+    \      showStats: true\n      widget:\n        type: prometheus\n        url:\
+    \ http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090\n\
+    \  - Cloudflare tunnels:\n      icon: cloudflare.svg\n      href: https://dash.cloudflare.com\n\
+    \      description: All in-cluster tunnel connectors\n      widget:\n        type:\
+    \ prometheusmetric\n        url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090\n\
+    \        metrics:\n        - label: Ready\n          query: sum(kube_pod_status_ready{namespace=~\"\
+    cloudflared|obsidian|dashboard\",pod=~\".*tunnel.*|cloudflared-.*\",condition=\"\
+    true\"})\n          format:\n            type: number\n            options:\n\
+    \              maximumFractionDigits: 1\n        - label: Not ready\n        \
+    \  query: sum(kube_pod_status_ready{namespace=~\"cloudflared|obsidian|dashboard\"\
+    ,pod=~\".*tunnel.*|cloudflared-.*\",condition=\"false\"})\n            or vector(0)\n\
+    \          format:\n            type: number\n            options:\n         \
+    \     maximumFractionDigits: 1\n  - Platform services:\n      icon: kubernetes.svg\n\
+    \      href: https://grafana.yashbhangale.site\n      description: DNS, networking,\
+    \ storage & monitoring\n      namespace: kube-system\n      app: kube-system\n\
+    \      podSelector: ''\n      showStats: true\n"
+  widgets.yaml: "- greeting:\n    text: Yash's Homelab\n    text_size: 2xl\n- kubernetes:\n\
+    \    cluster:\n      show: true\n      cpu: true\n      memory: true\n      showLabel:\
+    \ true\n      label: K3s · boii\n    nodes:\n      show: false\n- datetime:\n\
+    \    text_size: md\n    format:\n      dateStyle: medium\n      timeStyle: short\n\
+    \      hour12: true\n"
+  kubernetes.yaml: 'ingress: true
+
+    mode: cluster
+
+    '
+  bookmarks.yaml: '[]
+
+    '
+  docker.yaml: '{}
+
+    '
+  custom.css: '/* Preserve Homepage''s native components and responsive layout. */
+
+    :root { color-scheme: dark; }
+
+    #page_container { max-width: 1600px; margin-inline: auto; }
+
+    .service-group-name { font-weight: 650; letter-spacing: -0.015em; }
+
+    .service-description { line-height: 1.5; }
+
+    a:focus-visible, button:focus-visible { outline: 2px solid #67e8f9; outline-offset:
+    4px; }
+
+    ::selection { background: #155e75; color: #ecfeff; }
+
+    '
+  custom.js: ''
+  gatus.yaml: "web:\n  port: 8081\nmetrics: true\nstorage:\n  type: sqlite\n  path:\
+    \ /data/gatus.db\n  maximum-number-of-results: 1440\n  maximum-number-of-events:\
+    \ 100\nui:\n  title: Yash's Homelab · Uptime\n  description: Live service checks.\
+    \ History begins when this monitor was deployed.\n  default-sort-by: group\n \
+    \ default-group: Applications\nendpoints:\n- name: Jellyfin\n  group: Applications\n\
+    \  url: http://jellyfin.jellyfin:8096\n  interval: 60s\n  conditions:\n  - '[STATUS]\
+    \ >= 200'\n  - '[STATUS] < 400'\n  client:\n    timeout: 10s\n- name: Kavita\n\
+    \  group: Applications\n  url: http://kavita.kavita:5000\n  interval: 60s\n  conditions:\n\
+    \  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n  client:\n    timeout: 10s\n- name:\
+    \ qBittorrent\n  group: Applications\n  url: http://qbittorrent.qbittorrent:8080\n\
+    \  interval: 60s\n  conditions:\n  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n\
+    \  client:\n    timeout: 10s\n- name: Obsidian\n  group: Applications\n  url:\
+    \ https://obsidian.yashbhangale.site\n  interval: 60s\n  conditions:\n  - '[STATUS]\
+    \ == 401'\n  client:\n    timeout: 10s\n- name: Nextcloud\n  group: Applications\n\
+    \  url: https://nextcloud.yashbhangale.site/status.php\n  interval: 60s\n  conditions:\n\
+    \  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n  client:\n    timeout: 10s\n- name:\
+    \ Filebrowser\n  group: Applications\n  url: http://filebrowser.filebrowser:80\n\
+    \  interval: 60s\n  conditions:\n  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n\
+    \  client:\n    timeout: 10s\n- name: Paperless\n  group: Applications\n  url:\
+    \ http://paperless.paperless:8000\n  interval: 60s\n  conditions:\n  - '[STATUS]\
+    \ >= 200'\n  - '[STATUS] < 400'\n  client:\n    timeout: 10s\n- name: Open WebUI\n\
+    \  group: Applications\n  url: http://openwebui-open-webui.openwebui:80\n  interval:\
+    \ 60s\n  conditions:\n  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n  client:\n\
+    \    timeout: 10s\n- name: Home Assistant\n  group: Applications\n  url: http://homeassistant.homeassistant:8123\n\
+    \  interval: 60s\n  conditions:\n  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n\
+    \  client:\n    timeout: 10s\n- name: Kasm\n  group: Applications\n  url: https://kasm.kasm:443\n\
+    \  interval: 60s\n  conditions:\n  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n\
+    \  client:\n    timeout: 10s\n    insecure: true\n- name: Browser terminal\n \
+    \ group: Applications\n  url: http://wetty.wetty:3000\n  interval: 60s\n  conditions:\n\
+    \  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n  client:\n    timeout: 10s\n- name:\
+    \ Supabase\n  group: Applications\n  url: http://supabase-supabase-kong.supabase:8000\n\
+    \  interval: 60s\n  conditions:\n  - '[STATUS] == 401'\n  client:\n    timeout:\
+    \ 10s\n- name: Argo CD\n  group: Applications\n  url: http://argocd-server.argocd:80\n\
+    \  interval: 60s\n  conditions:\n  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n\
+    \  client:\n    timeout: 10s\n    insecure: true\n- name: Grafana\n  group: Applications\n\
+    \  url: http://monitoring-grafana.monitoring:80\n  interval: 60s\n  conditions:\n\
+    \  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n  client:\n    timeout: 10s\n- name:\
+    \ Prometheus\n  group: Infrastructure\n  url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/-/ready\n\
+    \  interval: 60s\n  conditions:\n  - '[STATUS] == 200'\n  client:\n    timeout:\
+    \ 10s\n- name: Alertmanager\n  group: Infrastructure\n  url: http://monitoring-kube-prometheus-alertmanager.monitoring:9093/-/ready\n\
+    \  interval: 60s\n  conditions:\n  - '[STATUS] == 200'\n  client:\n    timeout:\
+    \ 10s\n- name: CoreDNS\n  group: Infrastructure\n  url: tcp://kube-dns.kube-system:53\n\
+    \  interval: 60s\n  conditions:\n  - '[CONNECTED] == true'\n  client:\n    timeout:\
+    \ 10s\n- name: Supabase Postgres\n  group: Infrastructure\n  url: tcp://supabase-supabase-db.supabase:5432\n\
+    \  interval: 60s\n  conditions:\n  - '[CONNECTED] == true'\n  client:\n    timeout:\
+    \ 10s\n- name: Open WebUI Redis\n  group: Infrastructure\n  url: tcp://openwebui-open-webui-redis.openwebui:6379\n\
+    \  interval: 60s\n  conditions:\n  - '[CONNECTED] == true'\n  client:\n    timeout:\
+    \ 10s\n"

@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: dashboard-auth
+  namespace: dashboard
+spec:
+  encryptedData:
+    htpasswd: AgAR9/GoMxAgy6/DT1+K3ap/yIxkHJv07n6/XVH1GUeQyOrD7VMkktUZTIPDikTwPvbGX4DfJ2tlaCND4FUBk847pCH7d1btJMUyxeQ85M/+6y8u1a+SpNxlDaKctXAiCucPoLqiMXOBjmSR+yJW1oPqMdZ0I39iqDEgt9+lCG4dZiUcAc4bYGPILIa51KSZ1l2NwWZ3CuZtGN6LfjH5HzDu0cV31oIFIh88tzIksMfOrHrMMb7ubMHl3LTXUAdak79i4t0K48WjhBXVkzeGJl7yuW2GV9KAARotd1kR5qO2OKmPbImPKTuf7f3c/lrUWxu1JfagR+RszbIm46ZyKLi5oAOvt7nav+yOdvXgGx3oFFTu8dX1VXMY7bikmk/Zo7jWhotvt7KEZuAkWLFFq1e5wAMhiUT5pULt1KOkTw7it8HaEd3TMz9E8Vp3P7t5pNOjiRC3C+hnMe9m2JaQfsAd0Opup4VHHDg8L+6c1GDsU00ZlZAYvMZDWUbroLjkFZAu1+4MvVX6pKxhvGIoaQPTVuRL3XggzH+emhKg/JyjzXkZspMXNRYt6fhceO24VZ8PqaHCffRzg24ryWc5McnH5znZgFt8K2VflDKJAr0Tmk0osjwnVq/TasI7lL0Nqluaz6Pc+UQklGzZU5dzOK2vC4nwOwdvlqmE6wj0BxEskjbui4R92TvT/b0OE8HGVe0j5Dx2+w30Q5aBeTYVLQeTgp0GICvTSmAHoTO1TH07Cpd3fbE+uO5NXoKxmtB0AGw7uXPZQUAqNsHyH7td52PqMQXBj8Y=
+  template:
+    metadata:
+      name: dashboard-auth
+      namespace: dashboard
