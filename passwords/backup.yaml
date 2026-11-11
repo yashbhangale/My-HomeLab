@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vaultwarden-backup
+  namespace: passwords
+data:
+  backup.py: "\"\"\"Take a consistent SQLite backup without interrupting Vaultwarden.\"\
+    \"\"\nfrom pathlib import Path\nfrom datetime import datetime,timezone\nimport\
+    \ sqlite3,tempfile,tarfile,os\nsource=Path('/data');target=Path('/backups');target.mkdir(exist_ok=True)\n\
+    os.umask(0o077)\nwith tempfile.TemporaryDirectory() as tmp:\n db=Path(tmp)/'db.sqlite3'\n\
+    \ with sqlite3.connect('file:/data/db.sqlite3?mode=ro',uri=True) as src,sqlite3.connect(db)\
+    \ as dst:\n  src.backup(dst)\n  assert dst.execute('PRAGMA integrity_check').fetchone()[0]=='ok'\n\
+    \  users=dst.execute('SELECT count(*) FROM users').fetchone()[0]\n  items=dst.execute('SELECT\
+    \ count(*) FROM ciphers').fetchone()[0]\n stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')\n\
+    \ out=target/('vaultwarden-'+stamp+'.tar.gz')\n with tarfile.open(out,'w:gz')\
+    \ as archive:\n  archive.add(db,arcname='db.sqlite3')\n  for p in source.iterdir():\n\
+    \   if p.name in ['db.sqlite3','db.sqlite3-shm','db.sqlite3-wal','tmp','icon_cache']:continue\n\
+    \   archive.add(p,arcname=p.name)\n out.chmod(0o600)\n with tarfile.open(out,'r:gz')\
+    \ as archive:\n  names=archive.getnames();assert 'db.sqlite3' in names and 'rsa_key.pem'\
+    \ in names\n print('Verified local backup:',out.name,'users:',users,'encrypted\
+    \ items:',items)\n"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vaultwarden-backup
+  namespace: passwords
+spec:
+  schedule: 15 3 * * *
+  timeZone: Asia/Kolkata
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: boii
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: backup
+            image: python:3.13-alpine
+            command:
+            - python3
+            - /scripts/backup.py
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                cpu: 250m
+                memory: 128Mi
+                ephemeral-storage: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+              readOnly: true
+            - name: data
+              mountPath: /data
+              readOnly: true
+            - name: backups
+              mountPath: /backups
+            - name: tmp
+              mountPath: /tmp
+          volumes:
+          - name: script
+            configMap:
+              name: vaultwarden-backup
+          - name: data
+            hostPath:
+              path: /home/yash/.local/share/passwords/data
+              type: Directory
+          - name: backups
+            hostPath:
+              path: /home/yash/.local/share/passwords/backups
+              type: Directory
+          - name: tmp
+            emptyDir: {}

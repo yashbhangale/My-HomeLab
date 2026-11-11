@@ -5,7 +5,7 @@
 - **Login:** `/home/yash/.local/share/homelab-dashboard/login.txt` (owner-only, outside Git).
 
 Homepage v2.7.0 provides the application launcher and Kubernetes resource status.
-Gatus v5.38.0 checks 14 applications and five infrastructure endpoints every minute.
+Gatus v5.38.0 checks 15 applications and five infrastructure endpoints every minute.
 The existing Prometheus supplies 16 host/cluster metrics, refreshed every 15 seconds;
 Grafana remains the destination for detailed time-series exploration.
 

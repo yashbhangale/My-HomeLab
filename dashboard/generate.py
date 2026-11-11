@@ -26,6 +26,7 @@ APPS = [
  ('Supabase','supabase','sb','supabase.svg','Database, auth, storage & APIs','http://supabase-supabase-kong.supabase:8000',''),
  ('Argo CD','argocd','argocd','argo-cd.svg','GitOps deployments & application health','http://argocd-server.argocd:80',''),
  ('Grafana','monitoring','grafana','grafana.svg','Resource trends, logs & detailed dashboards','http://monitoring-grafana.monitoring:80','app.kubernetes.io/name=grafana'),
+ ('Passwords','passwords','passwords','vaultwarden.svg','Encrypted service logins & secure notes','http://vaultwarden.passwords:80/alive','app=vaultwarden'),
 ]
 def app(a):
     name, ns, sub, icon, desc, origin, selector = a
@@ -60,13 +61,13 @@ services = [
  {'Media & downloads':[app(a) for a in APPS[:3]]},
  {'Knowledge & files':[app(a) for a in APPS[3:7]]},
  {'Apps & workspaces':[app(a) for a in APPS[7:12]]},
- {'Operations':[
+ {'Operations':[app(APPS[14]),
   {'Uptime history': {'icon':'gatus.svg','href':'https://status.yashbhangale.site','description':'Availability, latency & persistent check history','widget':{'type':'gatus','url':'http://127.0.0.1:8081'}}},
   app(APPS[12]),app(APPS[13]),
   {'Prometheus': {'icon':'prometheus.svg','href':'https://grafana.yashbhangale.site/explore','description':'Scrape health & time-series metrics','namespace':'monitoring','app':'prometheus','podSelector':'app.kubernetes.io/name=prometheus','showStats':True,'widget':{'type':'prometheus','url':PROM}}},
   {'Cloudflare tunnels': {'icon':'cloudflare.svg','href':'https://dash.cloudflare.com','description':'All in-cluster tunnel connectors','widget':{'type':'prometheusmetric','url':PROM,'metrics':[
-   metric('Ready','sum(kube_pod_status_ready{namespace=~"cloudflared|obsidian|dashboard",pod=~".*tunnel.*|cloudflared-.*",condition="true"})'),
-   metric('Not ready','sum(kube_pod_status_ready{namespace=~"cloudflared|obsidian|dashboard",pod=~".*tunnel.*|cloudflared-.*",condition="false"}) or vector(0)')]}}},
+   metric('Ready','sum(kube_pod_status_ready{namespace=~"cloudflared|obsidian|dashboard|passwords",pod=~".*tunnel.*|cloudflared-.*",condition="true"})'),
+   metric('Not ready','sum(kube_pod_status_ready{namespace=~"cloudflared|obsidian|dashboard|passwords",pod=~".*tunnel.*|cloudflared-.*",condition="false"}) or vector(0)')]}}},
   {'Platform services':{'icon':'kubernetes.svg','href':'https://grafana.yashbhangale.site','description':'DNS, networking, storage & monitoring','namespace':'kube-system','app':'kube-system','podSelector':'','showStats':True}},
  ]},
 ]

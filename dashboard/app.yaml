@@ -97,7 +97,7 @@ spec:
   template:
     metadata:
       annotations:
-        dashboard.homelab/config-revision: "3bf1071892f14aba"
+        dashboard.homelab/config-revision: "8cd5431146bb9d5c"
       labels: {app: homepage}
     spec:
       nodeSelector: {kubernetes.io/hostname: boii}

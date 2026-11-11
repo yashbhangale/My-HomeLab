@@ -112,7 +112,11 @@ data:
     \      showStats: true\n      siteMonitor: http://wetty.wetty:3000\n  - Supabase:\n\
     \      icon: supabase.svg\n      href: https://sb.yashbhangale.site\n      description:\
     \ Database, auth, storage & APIs\n      namespace: supabase\n      app: supabase\n\
-    \      podSelector: ''\n      showStats: true\n- Operations:\n  - Uptime history:\n\
+    \      podSelector: ''\n      showStats: true\n- Operations:\n  - Passwords:\n\
+    \      icon: vaultwarden.svg\n      href: https://passwords.yashbhangale.site\n\
+    \      description: Encrypted service logins & secure notes\n      namespace:\
+    \ passwords\n      app: passwords\n      podSelector: app=vaultwarden\n      showStats:\
+    \ true\n      siteMonitor: http://vaultwarden.passwords:80/alive\n  - Uptime history:\n\
     \      icon: gatus.svg\n      href: https://status.yashbhangale.site\n      description:\
     \ Availability, latency & persistent check history\n      widget:\n        type:\
     \ gatus\n        url: http://127.0.0.1:8081\n  - Argo CD:\n      icon: argo-cd.svg\n\
@@ -132,10 +136,10 @@ data:
     \      description: All in-cluster tunnel connectors\n      widget:\n        type:\
     \ prometheusmetric\n        url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090\n\
     \        metrics:\n        - label: Ready\n          query: sum(kube_pod_status_ready{namespace=~\"\
-    cloudflared|obsidian|dashboard\",pod=~\".*tunnel.*|cloudflared-.*\",condition=\"\
-    true\"})\n          format:\n            type: number\n            options:\n\
-    \              maximumFractionDigits: 1\n        - label: Not ready\n        \
-    \  query: sum(kube_pod_status_ready{namespace=~\"cloudflared|obsidian|dashboard\"\
+    cloudflared|obsidian|dashboard|passwords\",pod=~\".*tunnel.*|cloudflared-.*\"\
+    ,condition=\"true\"})\n          format:\n            type: number\n         \
+    \   options:\n              maximumFractionDigits: 1\n        - label: Not ready\n\
+    \          query: sum(kube_pod_status_ready{namespace=~\"cloudflared|obsidian|dashboard|passwords\"\
     ,pod=~\".*tunnel.*|cloudflared-.*\",condition=\"false\"})\n            or vector(0)\n\
     \          format:\n            type: number\n            options:\n         \
     \     maximumFractionDigits: 1\n  - Platform services:\n      icon: kubernetes.svg\n\
@@ -212,7 +216,10 @@ data:
     \  client:\n    timeout: 10s\n    insecure: true\n- name: Grafana\n  group: Applications\n\
     \  url: http://monitoring-grafana.monitoring:80\n  interval: 60s\n  conditions:\n\
     \  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n  client:\n    timeout: 10s\n- name:\
-    \ Prometheus\n  group: Infrastructure\n  url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/-/ready\n\
+    \ Passwords\n  group: Applications\n  url: http://vaultwarden.passwords:80/alive\n\
+    \  interval: 60s\n  conditions:\n  - '[STATUS] >= 200'\n  - '[STATUS] < 400'\n\
+    \  client:\n    timeout: 10s\n- name: Prometheus\n  group: Infrastructure\n  url:\
+    \ http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/-/ready\n\
     \  interval: 60s\n  conditions:\n  - '[STATUS] == 200'\n  client:\n    timeout:\
     \ 10s\n- name: Alertmanager\n  group: Infrastructure\n  url: http://monitoring-kube-prometheus-alertmanager.monitoring:9093/-/ready\n\
     \  interval: 60s\n  conditions:\n  - '[STATUS] == 200'\n  client:\n    timeout:\
