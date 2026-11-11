@@ -34,6 +34,11 @@ spec:
         # (tcp://<ip>:8000) collides with paperless-ngx's own bind-port var.
         - name: PAPERLESS_PORT
           value: "8000"
+        - name: PAPERLESS_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: paperless-secret
+              key: PAPERLESS_SECRET_KEY
         - name: PAPERLESS_REDIS
           value: "redis://paperless-redis.paperless.svc.cluster.local:6379"
         - name: PAPERLESS_TIME_ZONE

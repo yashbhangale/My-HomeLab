@@ -28,6 +28,7 @@ spec:
             - "--base=/"
             - "--port=3000"
             - "--title=homelab"
+            - "--allowed-origin=https://ssh.yashbhangale.site"
           ports:
             - containerPort: 3000
               protocol: TCP
