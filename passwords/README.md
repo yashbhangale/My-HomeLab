@@ -16,15 +16,17 @@ Both are owner-only files, outside Git. The master password is not stored in a
 Kubernetes Secret or in this repository. Do not commit credentials or vault exports.
 
 The initial import used the official Bitwarden CLI, which encrypted the data
-before uploading it. Eight login entries and ten explicit missing-credential
-notes were imported into the **Homelab** folder. A sync/decrypt round trip verified
+before uploading it. The **Homelab** folder contains six recovered/configured credential records, two
+clearly labelled outdated records, and twelve credential-needed notes. A sync/decrypt round trip verified
 all imported password values without logging them. No plaintext import file was
 written. The service credentials were not changed.
 
 Recoverable credentials came from current service Secrets and the private dashboard
 login record. Source provenance and verification status are included in each item.
-Configured Grafana, Nextcloud, and Supabase credentials are labelled unverified
-unless their current login was independently checked. Argo CD's initial password
+Grafana and Nextcloud rejected their saved bootstrap credentials with HTTP 401;
+those values are labelled outdated and retained only for provenance. Supabase
+dashboard Basic Auth accepted its credential (HTTP 307). Other machine/service
+credentials are labelled configured rather than independently login-verified. Argo CD's initial password
 failed comparison with the current password hash, so it was not represented as a
 working login. Application password hashes cannot recover the original passwords.
 
